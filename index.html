@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BitBoxApp Downloads Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">BitBoxApp Release Downloads</p>
+          <h1>Release download trends for the BitBoxApp installers.</h1>
+          <p class="hero-text">
+            This dashboard uses GitHub release asset download counts and groups
+            only the app installers by platform. Checksum and signature files
+            are excluded.
+          </p>
+        </div>
+
+        <section class="controls-panel" aria-label="Date controls">
+          <div class="preset-row" id="presetRow">
+            <button class="preset-button is-active" data-preset="all" type="button">
+              All time
+            </button>
+            <button class="preset-button" data-preset="90d" type="button">90 days</button>
+            <button class="preset-button" data-preset="180d" type="button">180 days</button>
+            <button class="preset-button" data-preset="365d" type="button">1 year</button>
+          </div>
+
+          <div class="date-row">
+            <label class="input-group">
+              <span>Start date</span>
+              <input id="startDate" type="date" />
+            </label>
+            <label class="input-group">
+              <span>End date</span>
+              <input id="endDate" type="date" />
+            </label>
+          </div>
+
+          <p class="controls-note" id="rangeNote"></p>
+        </section>
+      </header>
+
+      <main>
+        <section class="panel disclaimer-panel" aria-label="Dashboard disclaimers">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Notes</p>
+              <h2>Important context</h2>
+            </div>
+          </div>
+          <ul class="disclaimer-list">
+            <li>These are download numbers per release, not download numbers over time. Date points are dates releases were made.</li>
+            <li>Does not include iOS App Store or Android Google Play downloads. Only downloads from GitHub.</li>
+            <li>Data taken from <a href="https://api.github.com/repos/BitBoxSwiss/bitbox-wallet-app/releases" target="_blank" rel="noreferrer">https://api.github.com/repos/BitBoxSwiss/bitbox-wallet-app/releases</a>.</li>
+          </ul>
+        </section>
+
+        <section class="stats-grid" id="statsGrid" aria-label="Summary cards"></section>
+
+        <section class="chart-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Chart</p>
+                <h2>Downloads by Platform</h2>
+              </div>
+              <p class="panel-note">
+                Total installer downloads per platform in the selected timeframe.
+              </p>
+            </div>
+            <div id="platformBarChart" class="chart-host" role="img" aria-label="Downloads by platform"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Chart</p>
+                <h2>Downloads Over Time by OS</h2>
+              </div>
+              <p class="panel-note">
+                Downloads are plotted on each release date for matching assets.
+              </p>
+            </div>
+            <div id="osChart" class="chart-host" role="img" aria-label="Downloads over time by operating system"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">Chart</p>
+                <h2>Downloads Over Time by App Version</h2>
+              </div>
+              <p class="panel-note">
+                Total app downloads per release version within the selected range.
+              </p>
+            </div>
+            <div id="versionChart" class="chart-host" role="img" aria-label="Downloads over time by app version"></div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Release Assets</p>
+              <h2>Installer Downloads by Platform</h2>
+            </div>
+            <p class="panel-note" id="releaseCount"></p>
+          </div>
+          <div class="groups-grid" id="groupsGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="emptyStateTemplate">
+      <div class="empty-state">
+        <h3>No downloads in this timeframe</h3>
+        <p>Try widening the date range or switching back to all time.</p>
+      </div>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
