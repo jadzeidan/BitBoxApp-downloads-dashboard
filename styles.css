@@ -327,6 +327,29 @@ h1 {
   width: 10px;
 }
 
+.legend-shape {
+  align-items: center;
+  display: inline-flex;
+  height: 14px;
+  justify-content: center;
+  width: 14px;
+}
+
+.legend.is-key {
+  margin-top: 10px;
+}
+
+.legend.is-key .legend-item {
+  background: transparent;
+  cursor: default;
+}
+
+.legend.is-key .legend-item:hover,
+.legend.is-key .legend-item:focus-visible {
+  background: transparent;
+  transform: none;
+}
+
 .groups-grid {
   display: grid;
   gap: 16px;

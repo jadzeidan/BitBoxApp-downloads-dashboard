@@ -234,6 +234,7 @@ function render() {
     multiSeries: true,
     emptyMessage: "No version data in this timeframe.",
     valueFormatter: (point, seriesLabel) => `${seriesLabel}: ${formatNumber(point.value)} downloads`,
+    pointShapeAccessor: (point) => point.platformShape,
   });
 }
 
@@ -319,6 +320,7 @@ function buildVersionSeries(entries) {
       y: entry.downloads,
       value: entry.downloads,
       label: entry.name,
+      platformShape: shapeForEntry(entry),
     });
   });
 
@@ -453,11 +455,10 @@ function renderLineChart(container, series, options) {
           const title = options.valueFormatter
             ? options.valueFormatter(point, entry.label)
             : `${entry.label} ${formatLongDate(point.x)}: ${formatNumber(point.value)} downloads`;
+          const shape = options.pointShapeAccessor ? options.pointShapeAccessor(point, entry.label) : "circle";
 
           return `
-            <circle cx="${xScale(point.x.getTime()).toFixed(2)}" cy="${yScale(point.y).toFixed(2)}" r="4.5" fill="${entry.color}">
-              <title>${escapeHtml(title)}</title>
-            </circle>
+            ${renderMarkerShape(shape, xScale(point.x.getTime()), yScale(point.y), entry.color, title)}
           `;
         })
         .join("");
@@ -500,12 +501,32 @@ function renderLineChart(container, series, options) {
     .map(
       (entry) => `
         <button class="legend-item ${hidden.has(entry.label) ? "is-inactive" : ""}" type="button" data-chart-key="${options.chartKey}" data-series-label="${escapeHtml(entry.label)}" aria-pressed="${hidden.has(entry.label) ? "false" : "true"}">
-          <span class="legend-swatch" style="background:${entry.color}"></span>
+          <span class="${options.chartKey === "version" ? "legend-shape" : "legend-swatch"}">
+            ${
+              options.chartKey === "version"
+                ? renderLegendShape(dominantShape(entry.points), entry.color)
+                : `<span class="legend-swatch" style="background:${entry.color}"></span>`
+            }
+          </span>
           ${entry.label}
         </button>
       `,
     )
     .join("");
+
+  const shapeKey =
+    options.chartKey === "version"
+      ? `
+        <div class="legend is-key" aria-label="Platform marker key">
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("circle", "#637381")}</span>Windows</span>
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("diamond", "#637381")}</span>macOS</span>
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("triangle", "#637381")}</span>Linux AppImage</span>
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("square", "#637381")}</span>Linux DEB</span>
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("hexagon", "#637381")}</span>Linux RPM</span>
+          <span class="legend-item"><span class="legend-shape">${renderLegendShape("cross", "#637381")}</span>Android APK</span>
+        </div>
+      `
+      : "";
 
   container.innerHTML = `
     <svg class="chart-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true">
@@ -517,6 +538,7 @@ function renderLineChart(container, series, options) {
       <text class="axis-label" x="${margin.left}" y="${margin.top - 4}">Downloads</text>
     </svg>
     <div class="legend">${legend}</div>
+    ${shapeKey}
   `;
 
   container.querySelectorAll(".legend-item").forEach((button) => {
@@ -672,6 +694,69 @@ function formatCompactNumber(value) {
 function colorForIndex(index) {
   const hue = (index * 43) % 360;
   return `hsl(${hue} 68% 46%)`;
+}
+
+function shapeForEntry(entry) {
+  if (entry.platform === "Windows") {
+    return "circle";
+  }
+  if (entry.platform === "macOS") {
+    return "diamond";
+  }
+  if (entry.platform === "Android APK") {
+    return "cross";
+  }
+
+  const lowerName = entry.name.toLowerCase();
+  if (lowerName.endsWith(".appimage")) {
+    return "triangle";
+  }
+  if (lowerName.endsWith(".deb")) {
+    return "square";
+  }
+  if (lowerName.endsWith(".rpm")) {
+    return "hexagon";
+  }
+  return "circle";
+}
+
+function dominantShape(points) {
+  return points[0]?.platformShape || "circle";
+}
+
+function renderMarkerShape(shape, x, y, color, title) {
+  const xPos = Number(x).toFixed(2);
+  const yPos = Number(y).toFixed(2);
+  const safeTitle = title ? `<title>${escapeHtml(title)}</title>` : "";
+
+  if (shape === "diamond") {
+    return `<polygon points="${xPos},${(y - 6).toFixed(2)} ${(x + 6).toFixed(2)},${yPos} ${xPos},${(y + 6).toFixed(2)} ${(x - 6).toFixed(2)},${yPos}" fill="${color}">${safeTitle}</polygon>`;
+  }
+  if (shape === "triangle") {
+    return `<polygon points="${xPos},${(y - 6).toFixed(2)} ${(x + 6).toFixed(2)},${(y + 5).toFixed(2)} ${(x - 6).toFixed(2)},${(y + 5).toFixed(2)}" fill="${color}">${safeTitle}</polygon>`;
+  }
+  if (shape === "square") {
+    return `<rect x="${(x - 5).toFixed(2)}" y="${(y - 5).toFixed(2)}" width="10" height="10" fill="${color}">${safeTitle}</rect>`;
+  }
+  if (shape === "hexagon") {
+    return `<polygon points="${(x - 6).toFixed(2)},${yPos} ${(x - 3).toFixed(2)},${(y - 5).toFixed(2)} ${(x + 3).toFixed(2)},${(y - 5).toFixed(2)} ${(x + 6).toFixed(2)},${yPos} ${(x + 3).toFixed(2)},${(y + 5).toFixed(2)} ${(x - 3).toFixed(2)},${(y + 5).toFixed(2)}" fill="${color}">${safeTitle}</polygon>`;
+  }
+  if (shape === "cross") {
+    return `
+      <g stroke="${color}" stroke-width="3" stroke-linecap="round">
+        <line x1="${(x - 5).toFixed(2)}" y1="${(y - 5).toFixed(2)}" x2="${(x + 5).toFixed(2)}" y2="${(y + 5).toFixed(2)}"></line>
+        <line x1="${(x + 5).toFixed(2)}" y1="${(y - 5).toFixed(2)}" x2="${(x - 5).toFixed(2)}" y2="${(y + 5).toFixed(2)}"></line>
+        ${safeTitle}
+      </g>
+    `;
+  }
+  return `<circle cx="${xPos}" cy="${yPos}" r="4.5" fill="${color}">${safeTitle}</circle>`;
+}
+
+function renderLegendShape(shape, color) {
+  const size = 14;
+  const center = size / 2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${renderMarkerShape(shape, center, center, color, "")}</svg>`;
 }
 
 function toggleSeries(chartKey, label) {
